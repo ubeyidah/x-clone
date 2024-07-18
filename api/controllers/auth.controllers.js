@@ -1,6 +1,10 @@
 import Users from "../models/user.models.js";
-import { signupSchema } from "../schema/auth.schema.js";
-import { genTokenAndSetCookie, hashPassword } from "../utils/utils.js";
+import { loginSchema, signupSchema } from "../schema/auth.schema.js";
+import {
+  comparePassword,
+  genTokenAndSetCookie,
+  hashPassword,
+} from "../utils/utils.js";
 
 const signup = async (req, res, next) => {
   try {
@@ -45,7 +49,29 @@ const signup = async (req, res, next) => {
     next(error);
   }
 };
-const login = async (req, res, next) => {};
+const login = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+    const { error } = loginSchema.validate({ email, password });
+    if (error)
+      return res.status(400).json({ message: error.details[0].message });
+    const user = await Users.findOne({ email });
+    if (!user)
+      return res.status(400).json({ message: "Incorrect email adress." });
+    const isMatchPassword = await comparePassword(password, user.password);
+    if (!isMatchPassword)
+      return res.status(400).json({ message: "Incorrect password." });
+    genTokenAndSetCookie(user._id, res);
+    const userWithOutPassword = await Users.findById(user._id).select(
+      "-password"
+    );
+    if (!userWithOutPassword)
+      return res.status(404).json({ message: "User not found" });
+    res.status(200).json(userWithOutPassword);
+  } catch (error) {
+    next(error);
+  }
+};
 const logout = async (req, res, next) => {};
 
 export { signup, login, logout };
