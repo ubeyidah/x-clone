@@ -5,9 +5,10 @@ import connectMongoDb from "./db/connectMongoDB.js";
 import handleError from "./middlewares/errorHandle.js";
 config();
 const app = express();
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // api routes
-app.use(express.json());
 app.use("/api/auth", authRoutes);
 
 // error handling middleware
