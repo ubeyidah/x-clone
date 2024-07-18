@@ -72,6 +72,13 @@ const login = async (req, res, next) => {
     next(error);
   }
 };
-const logout = async (req, res, next) => {};
+const logout = async (req, res, next) => {
+  try {
+    res.cookie("xToken", "", { maxAge: 0 });
+    res.status(200).json({ message: "Logged out successfully." });
+  } catch (error) {
+    next(error);
+  }
+};
 
 export { signup, login, logout };
