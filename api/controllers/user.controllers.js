@@ -31,20 +31,24 @@ const followUnfollowUser = async (req, res, next) => {
       return res.status(401).json({ message: "You can't follow yourself" });
     const isFollow = userToModifiy.followers.includes(currentUser._id);
     if (isFollow) {
-      await Users.findByIdAndUpdate(userToModifiy._id, {
-        $pull: { followers: currentUser._id },
-      });
-      await Users.findByIdAndUpdate(currentUser._id, {
-        $pull: { following: userToModifiy._id },
-      });
+      Promise.all([
+        await Users.findByIdAndUpdate(userToModifiy._id, {
+          $pull: { followers: currentUser._id },
+        }),
+        await Users.findByIdAndUpdate(currentUser._id, {
+          $pull: { following: userToModifiy._id },
+        }),
+      ]);
       res.status(200).json({ message: "Unfollowed user successfully" });
     } else {
-      await Users.findByIdAndUpdate(userToModifiy._id, {
-        $push: { followers: currentUser._id },
-      });
-      await Users.findByIdAndUpdate(currentUser._id, {
-        $push: { following: userToModifiy._id },
-      });
+      Promise.all([
+        await Users.findByIdAndUpdate(userToModifiy._id, {
+          $push: { followers: currentUser._id },
+        }),
+        await Users.findByIdAndUpdate(currentUser._id, {
+          $push: { following: userToModifiy._id },
+        }),
+      ]);
       //send  notification to user
       res.status(200).json({ message: "Followed user successfully" });
     }
