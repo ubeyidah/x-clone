@@ -21,6 +21,32 @@ const getSuggestedUsers = async (req, res, next) => {
 };
 const followUnfollowUser = async (req, res, next) => {
   try {
+    const userToModifiy = await Users.findById(req.params.id).select(
+      "-password"
+    );
+    const currentUser = req.user;
+    if (!userToModifiy || !currentUser)
+      return res.status(404).json({ message: "User not found" });
+    if (userToModifiy._id.toString() === currentUser._id.toString())
+      return res.status(401).json({ message: "You can't follow yourself" });
+    const isFollow = userToModifiy.followers.includes(currentUser._id);
+    if (isFollow) {
+      await Users.findByIdAndUpdate(userToModifiy._id, {
+        $pull: { followers: currentUser._id },
+      });
+      await Users.findByIdAndUpdate(currentUser._id, {
+        $pull: { following: userToModifiy._id },
+      });
+      res.status(200).json({ message: "Unfollowed user successfully" });
+    } else {
+      await Users.findByIdAndUpdate(userToModifiy._id, {
+        $push: { followers: currentUser._id },
+      });
+      await Users.findByIdAndUpdate(currentUser._id, {
+        $push: { following: userToModifiy._id },
+      });
+      res.status(200).json({ message: "Followed user successfully" });
+    }
   } catch (error) {
     next(error);
   }
