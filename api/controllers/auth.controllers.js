@@ -80,5 +80,14 @@ const logout = async (req, res, next) => {
     next(error);
   }
 };
-
-export { signup, login, logout };
+const getMe = async (req, res, next) => {
+  try {
+    const id = req.user?._id;
+    const user = await Users.findById(id).select("-password");
+    if (!user) return res.status(404).json({ message: "User not found." });
+    res.status(200).json(user);
+  } catch (error) {
+    next(error);
+  }
+};
+export { signup, login, logout, getMe };
