@@ -16,6 +16,23 @@ const getUserProfile = async (req, res, next) => {
 };
 const getSuggestedUsers = async (req, res, next) => {
   try {
+    const currentUserId = req.user._id;
+    const userIfollowed = await Users.findById(currentUserId).select(
+      "following"
+    );
+    const userWithOutMe = await Users.aggregate([
+      {
+        $match: { _id: { $ne: currentUserId } },
+      },
+      {
+        $sample: { size: 10 },
+      },
+    ]);
+    const filteredUsers = userWithOutMe.filter(
+      (user) => !userIfollowed.following.includes(user._id)
+    );
+    const suggested = filteredUsers.slice(0, 4);
+    res.status(200).json(suggested);
   } catch (error) {
     next(error);
   }
