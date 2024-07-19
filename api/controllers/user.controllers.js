@@ -31,7 +31,8 @@ const getSuggestedUsers = async (req, res, next) => {
     const filteredUsers = userWithOutMe.filter(
       (user) => !userIfollowed.following.includes(user._id)
     );
-    const suggested = filteredUsers.slice(0, 4);
+    let suggested = filteredUsers.slice(0, 4);
+    suggested = suggested.map((user) => ({ ...user, password: null }));
     res.status(200).json(suggested);
   } catch (error) {
     next(error);
