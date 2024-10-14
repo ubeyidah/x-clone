@@ -10,6 +10,13 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@blocknote/core": "^0.15.6",
+    "@blocknote/mantine": "^0.15.6",
+    "@blocknote/react": "^0.15.6",
+    "@blocknote/shadcn": "^0.15.6",
+    "@tiptap/react": "^2.6.6",
+    "katex": "^0.16.11",
+    "novel": "^0.5.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
   },

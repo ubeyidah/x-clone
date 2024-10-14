@@ -1,5 +1,8 @@
 import Notifications from "../models/notification.models.js";
+import { v2 as cloudinary } from "cloudinary";
 import Users from "../models/user.models.js";
+import { userValidation } from "../schema/user.schema.js";
+import { comparePassword, hashPassword } from "../utils/utils.js";
 
 const getUserProfile = async (req, res, next) => {
   try {
@@ -80,16 +83,68 @@ const followUnfollowUser = async (req, res, next) => {
     next(error);
   }
 };
-const updateUserProfile = async (req, res, next) => {
+const updateUser = async (req, res, next) => {
+  const { fullName, email, userName, currentPassword, newPassword, bio, link } =
+    req.body;
+  let { profileImg, coverImg } = req.body;
+  const userId = req.user._id;
   try {
+    const { error } = userValidation.validate({
+      fullName,
+      email,
+      userName,
+      currentPassword,
+      newPassword,
+      bio,
+      link,
+    });
+    if (error)
+      return res.status(400).json({ message: error.details[0].message });
+    const user = await Users.findById(userId);
+    if (!user) return res.status(404).json({ message: "User not found" });
+    if ((!newPassword && currentPassword) || (newPassword && !currentPassword))
+      return res.status(400).json({
+        message: "Please provide both current password and new password",
+      });
+    if (newPassword && currentPassword) {
+      const isMatch = await comparePassword(currentPassword, user.password);
+      if (!isMatch)
+        return res.status(400).json({ message: "Incorrect password" });
+      const hashedPass = await hashPassword(newPassword);
+      user.password = hashedPass;
+    }
+    if (profileImg) {
+      if (user.profileImg) {
+        await cloudinary.uploader.destroy(
+          user.profileImg.split("/").pop().split(".")[0]
+        );
+      }
+      const uploadRes = await cloudinary.uploader.upload(profileImg);
+      profileImg = uploadRes.secure_url;
+    }
+    if (coverImg) {
+      if (user.coverImg) {
+        await cloudinary.uploader.destroy(
+          user.coverImg.split("/").pop().split(".")[0]
+        );
+      }
+      const uploadRes = await cloudinary.uploader.upload(coverImg);
+      coverImg = uploadRes.secure_url;
+    }
+
+    user.fullName = fullName || user.fullName;
+    user.email = email || user.email;
+    user.userName = userName || user.userName;
+    user.bio = bio || user.bio;
+    user.link = link || user.link;
+    user.profileImg = profileImg || user.profileImg;
+    user.coverImg = coverImg || user.coverImg;
+    const savedUser = await user.save();
+    const { password, ...updatedUser } = savedUser;
+    return res.status(201).json(updatedUser);
   } catch (error) {
     next(error);
   }
 };
 
-export {
-  getUserProfile,
-  getSuggestedUsers,
-  followUnfollowUser,
-  updateUserProfile,
-};
+export { getUserProfile, getSuggestedUsers, followUnfollowUser, updateUser };
